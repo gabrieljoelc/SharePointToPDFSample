@@ -16,6 +16,7 @@ namespace SharePointListToPDF
         {
             Mapper.CreateMap<XElement, ListItem>()
                   .ForMemberFromSPXElement(x => x.ID)
+                  .ForMemberFromSPXElement(x => x.Charge)
                   .ForMemberFromSPXElement(x => x.LinkTitle)
                   .ForMemberFromSPXElement(x => x.Status)
                   .ForMemberFromSPXElement(x => x.BoardReport, "ows_Board_x0020_Report");
@@ -25,31 +26,33 @@ namespace SharePointListToPDF
         {
             var baseDirectoryPath = Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.FullName;
             
-            var list = GetList<ListItem>();
+            var list = GetListFromSP<ListItem>();
             var table = CreatePdfTable(list);
             WritePdf(baseDirectoryPath, table);
         }
 
-        private static IEnumerable<TModel> GetList<TModel>()
+        private static IEnumerable<TModel> GetListFromSP<TModel>()
         {
             return SPListHelper.GetListItems().Select(Mapper.Map<XElement, TModel>).ToArray();
         }
 
         private static PdfPTable CreatePdfTable(IEnumerable<ListItem> list)
         {
-            var table = new PdfPTable(3) { TotalWidth = 500f };
-            table.SetWidths(new[] { 225f, 50f, 225f });
+            var table = new PdfPTable(4) { TotalWidth = 565f };
+            table.SetWidths(new[] { 60f, 225f, 55f, 225f });
             var cell = new PdfPCell(new Phrase("Board Report"))
             {
-                Colspan = 3,
+                Colspan = 4,
                 HorizontalAlignment = 1
             };
             table.AddCell(cell);
             table.AddCell("Charge");
+            table.AddCell("Charge Description");
             table.AddCell("Status");
             table.AddCell("Board Report");
             foreach (var listItem in list)
             {
+                table.AddCell(listItem.Charge.Replace("string;#", ""));
                 table.AddCell(listItem.LinkTitle);
                 PdfPCell statusCell = GetStatusCell(listItem.Status);
                 table.AddCell(statusCell);
@@ -106,6 +109,8 @@ namespace SharePointListToPDF
 // ReSharper restore ClassNeverInstantiated.Local
         {
             public string ID { get; set; }
+
+            public string Charge { get; set; }
 
             public string LinkTitle { get; set; }
 
